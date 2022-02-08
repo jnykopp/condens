@@ -1,0 +1,11 @@
+* Condens.el
+
+  Condense text with unicode ligatures!
+
+  Having problem squeezing your thought in 140 char tweet? No problem!
+  Just condens.el it!
+
+  Example:
+
+  The 16-character string "telephone gallup" turns into 11-character
+  "℡e㏗one ㏿lup".
