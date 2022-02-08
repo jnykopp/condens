@@ -2,8 +2,8 @@
 
   Condense text with unicode ligatures!
 
-  Having problem squeezing your thought in 140 char tweet? No problem!
-  Just condens.el it!
+  Having problem squeezing your thoughts in a 140 char tweet? No
+  problem!  Just condens.el it!
 
   Example:
 
