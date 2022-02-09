@@ -3,10 +3,18 @@ matching unicode glyph. Generated with `condens-db-gen'.")
 
 (defun condens-db-gen ()
   "Find all unicode glyphs that can be used for shortening text."
-  (cl-loop for ch from 0 upto #x10ffff
-           for nfkd = (ucs-normalize-NFKD-string ch)
-           when (string-match (rx bol (>= 2 (in "a-zA-Z.,!?0-9")) eol) nfkd)
-           collect (list nfkd (string ch))))
+  (append
+   ;; Some perfectly good ligatures don't have an ascii sequence as
+   ;; NFKD! Hence add them manually. (There are more phonetic
+   ;; etc. ligature-glyphs not like that, but the loop below finds
+   ;; other glyphs for those same ascii sequences.)
+   '(("ae" "æ") ("oe" "œ") ("oo" "ꝏ") ("ts" "ʦ") ("ls" "ʪ") ("ue" "ᵫ")
+     ("aa" "ꜳ") ("ao"  "ꜵ") ("av" "ꜹ") ("uo" "ꭣ") ("pts" "₧") ("ar" "🜇")
+     ("vb" "🝬") ("qp" "ȹ") ("tc" "ʨ"))
+   (cl-loop for ch from 0 upto #x10ffff
+            for nfkd = (ucs-normalize-NFKD-string ch)
+            when (string-match (rx bol (>= 2 (in "a-zA-Z.,!?0-9")) eol) nfkd)
+            collect (list nfkd (string ch)))))
 
 (defun condens-find-all-substrs (needle haystack)
   (cl-loop with haystack-ind = 0
@@ -80,7 +88,9 @@ matching unicode glyph. Generated with `condens-db-gen'.")
     (apply #'concatenate 'string (reverse result))))
 
 (defun condens-str (str)
-  (unless condens-db (setf condens-db (condens-db-gen)))
+  (unless condens-db
+    (message "Generating unicode ligature database, please wait...")
+    (setf condens-db (condens-db-gen)))
   (let* ((candidates               ; will contain (index nfkd unicode)
           (cl-sort
            (cl-loop for (c u) in condens-db
@@ -92,13 +102,19 @@ matching unicode glyph. Generated with `condens-db-gen'.")
          ;; From grouped-overlap, pick a combination that yields the
          ;; shortest result. Brute force.
          (chosen (condens-pick-choice 0 grouped-overlap)))
-    (message "Shortened %s by %d chars!" str (car chosen))
+    (if (> (car chosen) 0)
+        (message "Shortened %s by %d chars!" (string-trim str) (car chosen))
+      (message "Couldn't shorten %s" (string-trim str)))
     (condens-apply-choices str (cadr chosen))))
 
 (defun condens-this ()
   (interactive)
-  (let* ((str (thing-at-point 'word))
-         (new (condens-str str)))
-    (save-excursion
-      (backward-word)
-      (replace-regexp (regexp-quote str) new))))
+  (let ((beg (point)))
+    (forward-word)
+    (let* ((str (buffer-substring-no-properties beg (point)))
+           (new (condens-str str)))
+      (replace-region-contents beg (point) (lambda () new)))
+    ;; Rest of this hairy buffer-jumping stuff tries to make
+    ;; `condens-this' act like `capitalize-word'
+    (forward-whitespace 1)
+    (unless (= (point) (point-max)) (forward-whitespace -1))))

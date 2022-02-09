@@ -8,4 +8,18 @@
   Example:
 
   The 16-character string "telephone gallup" turns into 11-character
-  "℡e㏗one ㏿lup".
+  "℡e㏗one ㏿lup". (This may look ugly to you thanks to GitHub's
+  unfortunate choice of font, but rest assured, it is glorious in
+  Emacs!)
+
+  Demo time!
+
+  #+CAPTION: Short demo of running condens.el in Emacs
+  [[https://peruna.fi/~newcup/condens/condens.gif]]
+
+  To achieve similar effect yourself just bind function ~condens-this~ to a
+  key and ﬅ🜇t ㏊㎜er㏌g it!
+
+  Note: Initial build of unicode ligature database may take a minute
+  but it's done only once per Emacs-restart. Which happens once in a
+  century, about.
