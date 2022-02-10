@@ -10,10 +10,14 @@ matching unicode glyph. Generated with `condens-db-gen'.")
    ;; other glyphs for those same ascii sequences.)
    '(("ae" "æ") ("oe" "œ") ("oo" "ꝏ") ("ts" "ʦ") ("ls" "ʪ") ("ue" "ᵫ")
      ("aa" "ꜳ") ("ao"  "ꜵ") ("av" "ꜹ") ("uo" "ꭣ") ("pts" "₧") ("ar" "🜇")
-     ("vb" "🝬") ("qp" "ȹ") ("tc" "ʨ"))
+     ("vb" "🝬") ("qp" "ȹ") ("tc" "ʨ")
+     ("1/2" "½") ("0/3" "↉") ("1/3" "⅓") ("2/3" "⅔") ("1/4" "¼") ("3/4" "¾")
+     ("1/5" "⅕") ("2/5" "⅖") ("3/5" "⅗") ("4/5" "⅘") ("1/6" "⅙") ("5/6" "⅚")
+     ("1/7" "⅐") ("1/8" "⅛") ("3/8" "⅜") ("5/8" "⅝") ("7/8" "⅞") ("1/9" "⅑")
+     ("1/10" "⅒"))
    (cl-loop for ch from 0 upto #x10ffff
             for nfkd = (ucs-normalize-NFKD-string ch)
-            when (string-match (rx bol (>= 2 (in "a-zA-Z.,!?0-9")) eol) nfkd)
+            when (string-match (rx bol (>= 2 (in "a-zA-Z.,!?/_0-9-")) eol) nfkd)
             collect (list nfkd (string ch)))))
 
 (defun condens-find-all-substrs (needle haystack)
@@ -109,12 +113,13 @@ matching unicode glyph. Generated with `condens-db-gen'.")
 
 (defun condens-this ()
   (interactive)
+  (skip-chars-forward "[:space:]")
   (let ((beg (point)))
-    (forward-word)
-    (let* ((str (buffer-substring-no-properties beg (point)))
-           (new (condens-str str)))
-      (replace-region-contents beg (point) (lambda () new)))
-    ;; Rest of this hairy buffer-jumping stuff tries to make
-    ;; `condens-this' act like `capitalize-word'
     (forward-whitespace 1)
-    (unless (= (point) (point-max)) (forward-whitespace -1))))
+    (let ((end (point)))
+      (let* ((str (buffer-substring-no-properties beg end))
+             (new (condens-str str)))
+        (replace-region-contents beg end (lambda () new))))
+    ;; In string ending at end-of-buffer corner case, point won't move
+    ;; after replace. Handle that.
+    (when (= beg (point)) (forward-whitespace 1))))
