@@ -23,3 +23,5 @@
   Note: Initial build of unicode ligature database may take a minute
   but it's done only once per Emacs-restart. Which happens once in a
   century, about.
+
+  Licensed under the terms of MIT License.

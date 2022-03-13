@@ -1,3 +1,27 @@
+;; condens.el
+
+;; Copyright © 2022 Janne Nykopp
+
+;; Permission is hereby granted, free of charge, to any person
+;; obtaining a copy of this software and associated documentation
+;; files (the "Software"), to deal in the Software without
+;; restriction, including without limitation the rights to use, copy,
+;; modify, merge, publish, distribute, sublicense, and/or sell copies
+;; of the Software, and to permit persons to whom the Software is
+;; furnished to do so, subject to the following conditions:
+
+;; The above copyright notice and this permission notice shall be
+;; included in all copies or substantial portions of the Software.
+
+;; THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
+;; EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+;; MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
+;; NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
+;; BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
+;; ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
+;; CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+;; SOFTWARE.
+
 (defvar condens-db nil "List of lists of Unicode NFKD-string and
 matching unicode glyph. Generated with `condens-db-gen'.")
 
@@ -10,15 +34,37 @@ matching unicode glyph. Generated with `condens-db-gen'.")
    ;; other glyphs for those same ascii sequences.)
    '(("ae" "æ") ("oe" "œ") ("oo" "ꝏ") ("ts" "ʦ") ("ls" "ʪ") ("ue" "ᵫ")
      ("aa" "ꜳ") ("ao"  "ꜵ") ("av" "ꜹ") ("uo" "ꭣ") ("pts" "₧") ("ar" "🜇")
-     ("vb" "🝬") ("qp" "ȹ") ("tc" "ʨ")
+     ("vb" "🝬") ("qp" "ȹ") ("tc" "ʨ") ("ab" "🆎") ("cl" "🆑") ("cool" "🆒")
+     ("free" "🆓") ("id" "🆔") ("new" "🆕") ("ng" "🆖") ("ok" "🆗") ("sos" "🆘")
+     ("up!" "🆙") ("vs" "🆚") ("ic" "🆋") ("sa" "🆍") ("3d" "🆛") ("2ndscr" "🆜")
+     ("2k" "🆝") ("4k" "🆞") ("8k" "🆟") ("5.1" "🆠") ("7.1" "🆡") ("22.2" "🆢")
+     ("60p" "🆣") ("120p" "🆤") ("hc" "🆦") ("hdr" "🆧") ("hi-res" "🆨")
+     ("lossless" "🆩") ("shv" "🆪") ("uhd" "🆫") ("vod" "🆬") ("lt" "₶") ("ce" "₠")
+     ("nul" "␀") ("soh" "␁") ("stx" "␂") ("etx" "␃") ("eot" "␄") ("enq" "␅")
+     ("ack" "␆") ("bel" "␇") ("bs" "␈") ("ht" "␉") ("lf" "␊") ("vt" "␋")
+     ("cr" "␍") ("so" "␎") ("si" "␏") ("dle" "␐") ("dc1" "␑") ("dc2" "␒")
+     ("dc3" "␓") ("dc4" "␔") ("nak" "␕") ("syn" "␖") ("etb" "␗") ("can" "␘")
+     ("em" "␙") ("sub" "␚") ("esc" "␛") ("fs" "␜") ("gs" "␝") ("us" "␟")
+     ("sp" "␠") ("del" "␡") ("nl" "␤") ("d.s." "𝄉") ("d.c." "𝄊") ("bb" "𝄫")
+     ("8va" "𝄶") ("8vb" "𝄷") ("15ma" "𝄸") ("15mb" "𝄹") ("tr" "𝆖") ("ped" "𝆮")
+     ("oy" "ѹ") ("xx" "⯵") ("60" "㉍") ("70" "㉎") ("80" "㉏") ("v/m" "㏞")
+     ("a/m" "㏟") ("bl" "Ы") ("uh" "ﬕ") ("obj" "￼") ("sss" "∭") ("ssss" "⨌")
      ("1/2" "½") ("0/3" "↉") ("1/3" "⅓") ("2/3" "⅔") ("1/4" "¼") ("3/4" "¾")
      ("1/5" "⅕") ("2/5" "⅖") ("3/5" "⅗") ("4/5" "⅘") ("1/6" "⅙") ("5/6" "⅚")
      ("1/7" "⅐") ("1/8" "⅛") ("3/8" "⅜") ("5/8" "⅝") ("7/8" "⅞") ("1/9" "⅑")
      ("1/10" "⅒"))
-   (cl-loop for ch from 0 upto #x10ffff
-            for nfkd = (ucs-normalize-NFKD-string ch)
-            when (string-match (rx bol (>= 2 (in "a-zA-Z.,!?/_0-9-")) eol) nfkd)
-            collect (list nfkd (string ch)))))
+   ;; Go through all of unicode except private use areas
+   ;; #xe000-#xf8ff, #xf0000-#xffffd, #x100000-#x10fffd as they aren't
+   ;; portable, and unicode noncharacters adjacent to them, #xffffe +
+   ;; #xfffff, #x10fffe + #x10ffff as that simplifies the ranges
+   ;; (planes 15 and 16 can be eliminated completely and search
+   ;; stopped at plane 14). Begin is inclusive, end is exclusive.
+   (let ((ranges '((0 . #xe000) (#xf900 . #xf0000))))
+     (cl-loop for (lo . hi) in ranges append
+              (cl-loop for ch from lo below hi
+                       for nfkd = (ucs-normalize-NFKD-string ch)
+                       when (string-match (rx bol (>= 2 (in "a-zA-Z.,!?/_0-9-")) eol) nfkd)
+                       collect (list nfkd (string ch)))))))
 
 (defun condens-find-all-substrs (needle haystack)
   (cl-loop with haystack-ind = 0
@@ -29,6 +75,8 @@ matching unicode glyph. Generated with `condens-db-gen'.")
            collect match-ind))
 
 (defun condens-overlapping (candidates)
+  ;; Assumes CANDIDATES are sorted with `condens-compare-candidates'
+  ;; so that first candidate is always longest.
   (cl-loop for c1 in candidates
            for prev-c1-ind = -1 then c1-ind
            for rem-cand from 1
@@ -91,6 +139,15 @@ matching unicode glyph. Generated with `condens-db-gen'.")
     (push (subseq name rem) result)
     (apply #'concatenate 'string (reverse result))))
 
+(defun condens-compare-candidates (c1 c2)
+  ;; For easing overlappage check, sort primarily by index and
+  ;; secondarily by length (longest first)
+  (let ((c1-ind (first c1))
+        (c2-ind (first c2)))
+    (if (= c1-ind c2-ind)
+        (> (length (second c1)) (length (second c2)))
+      (< c1-ind c2-ind))))
+
 (defun condens-str (str)
   (unless condens-db
     (message "Generating unicode ligature database, please wait...")
@@ -101,7 +158,7 @@ matching unicode glyph. Generated with `condens-db-gen'.")
                     for indices = (condens-find-all-substrs c str)
                     when indices
                     append (mapcar (lambda (x) (list x c u)) indices))
-           #'< :key #'car))
+           #'condens-compare-candidates))
          (grouped-overlap (condens-overlapping candidates))
          ;; From grouped-overlap, pick a combination that yields the
          ;; shortest result. Brute force.
