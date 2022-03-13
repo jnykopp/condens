@@ -30,8 +30,9 @@ matching unicode glyph. Generated with `condens-db-gen'.")
   (append
    ;; Some perfectly good ligatures don't have an ascii sequence as
    ;; NFKD! Hence add them manually. (There are more phonetic
-   ;; etc. ligature-glyphs not like that, but the loop below finds
-   ;; other glyphs for those same ascii sequences.)
+   ;; etc. ligature-glyphs without NFKD which look like ascii
+   ;; sequences, but the cl-loop below finds other glyphs for those
+   ;; same ascii sequences.)
    '(("ae" "æ") ("oe" "œ") ("oo" "ꝏ") ("ts" "ʦ") ("ls" "ʪ") ("ue" "ᵫ")
      ("aa" "ꜳ") ("ao"  "ꜵ") ("av" "ꜹ") ("uo" "ꭣ") ("pts" "₧") ("ar" "🜇")
      ("vb" "🝬") ("qp" "ȹ") ("tc" "ʨ") ("ab" "🆎") ("cl" "🆑") ("cool" "🆒")
