@@ -22,8 +22,10 @@
 ;; CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 ;; SOFTWARE.
 
+(require 'ucs-normalize)
+
 (defvar condens-db nil "List of lists of Unicode NFKD-string and
-matching unicode glyph. Generated with `condens-db-gen'.")
+matching unicode glyph.  Generated with `condens-db-gen'.")
 
 (defun condens-db-gen ()
   "Find all unicode glyphs that can be used for shortening text."
@@ -81,21 +83,21 @@ matching unicode glyph. Generated with `condens-db-gen'.")
   (cl-loop for c1 in candidates
            for prev-c1-ind = -1 then c1-ind
            for rem-cand from 1
-           for c1-ind = (first c1)
-           for c1-ascii = (second c1)
+           for c1-ind = (cl-first c1)
+           for c1-ascii = (cl-second c1)
            for c1-len = (length c1-ascii)
            when (/= c1-ind prev-c1-ind)
-           collect (cons c1 (cl-loop for c2 in (subseq candidates rem-cand)
-                                     for c2-ind = (first c2)
+           collect (cons c1 (cl-loop for c2 in (cl-subseq candidates rem-cand)
+                                     for c2-ind = (cl-first c2)
                                      when (< c2-ind (+ c1-ind c1-len))
                                      collect c2))))
 
 (defun condens-update-choices-by-chosen (chosen from-group rest-choices)
-  (let ((removed (cl-remove chosen from-group :test #'equalp)))
+  (let ((removed (cl-remove chosen from-group :test #'cl-equalp)))
     (cl-loop for c in rest-choices
-             if (find chosen c :test #'equalp)
-             do (setf removed (append removed (cl-remove chosen c :test #'equalp)))
-             else when (cl-set-difference c removed :test #'equalp)
+             if (cl-find chosen c :test #'cl-equalp)
+             do (setf removed (append removed (cl-remove chosen c :test #'cl-equalp)))
+             else when (cl-set-difference c removed :test #'cl-equalp)
              collect it)))
 
 (defun condens-pick-choice (shortening-so-far choices)
@@ -114,7 +116,7 @@ matching unicode glyph. Generated with `condens-db-gen'.")
         (list shortening-so-far (list nil)))
     ;; Not last one - recurse and pick best from the subtrees.
     (let ((first-group (car choices)))
-      (assert first-group)
+      (cl-assert first-group)
       (cl-loop for (i c u) in first-group
                for this-shortening = (1- (length c))
                for (shrt chosen) = (condens-pick-choice
@@ -134,19 +136,19 @@ matching unicode glyph. Generated with `condens-db-gen'.")
         (rem 0))
     (cl-loop for (i c u) in (remove nil choices)
              do
-             (push (subseq name rem i) result)
+             (push (cl-subseq name rem i) result)
              (push u result)
              (setf rem (+ i (length c))))
-    (push (subseq name rem) result)
-    (apply #'concatenate 'string (reverse result))))
+    (push (cl-subseq name rem) result)
+    (apply #'cl-concatenate 'string (reverse result))))
 
 (defun condens-compare-candidates (c1 c2)
   ;; For easing overlappage check, sort primarily by index and
   ;; secondarily by length (longest first)
-  (let ((c1-ind (first c1))
-        (c2-ind (first c2)))
+  (let ((c1-ind (cl-first c1))
+        (c2-ind (cl-first c2)))
     (if (= c1-ind c2-ind)
-        (> (length (second c1)) (length (second c2)))
+        (> (length (cl-second c1)) (length (cl-second c2)))
       (< c1-ind c2-ind))))
 
 (defun condens-str (str)
